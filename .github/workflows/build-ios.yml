@@ -1,4 +1,4 @@
-name: Build iOS App (.ipa & .zip)
+name: Build Universal iOS App (.ipa & .zip)
 
 on:
   push:
@@ -12,18 +12,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Show Available Simulators
-        run: |
-          xcodebuild -version
+      - name: Show Xcode Version
+        run: xcodebuild -version
 
-      - name: Build iOS App (.app)
+      - name: Build Universal iOS App (.app)
         run: |
           xcodebuild build \
             -project ThePetStation.xcodeproj \
             -scheme ThePetStation \
-            -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             -derivedDataPath build \
+            ARCHS="x86_64 arm64" \
+            ONLY_ACTIVE_ARCH=NO \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
