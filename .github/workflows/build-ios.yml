@@ -15,14 +15,16 @@ jobs:
       - name: Show Xcode Version
         run: xcodebuild -version
 
-      - name: Build & Archive Physical iPhone App (.app)
+      - name: Build Physical iPhone Executable App
         run: |
-          xcodebuild archive \
+          xcodebuild build \
             -project ThePetStation.xcodeproj \
             -scheme ThePetStation \
             -sdk iphoneos \
-            -archivePath build/ThePetStation.xcarchive \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
+            -derivedDataPath build \
+            ARCHS="arm64" \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
@@ -32,7 +34,9 @@ jobs:
       - name: Package Complete Physical Device .ipa
         run: |
           mkdir -p Payload
-          cp -r build/ThePetStation.xcarchive/Products/Applications/ThePetStation.app Payload/
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "ThePetStation.app" | head -n 1)
+          echo "Found Physical Device App at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
 
           echo "=== PAYLOAD CONTENTS VERIFICATION ==="
           ls -la Payload/ThePetStation.app/
