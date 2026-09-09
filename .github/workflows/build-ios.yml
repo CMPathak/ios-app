@@ -21,7 +21,16 @@ jobs:
         run: |
           xcodebuild -project ThePetStation.xcodeproj \
                      -scheme ThePetStation \
-                     -destination 'generic/platform=iOS' \
+                     -sdk iphoneos \
+                     -configuration Release \
+                     -derivedDataPath build \
+                     CODE_SIGN_IDENTITY="-" \
+                     CODE_SIGNING_REQUIRED=NO \
+                     CODE_SIGNING_ALLOWED=YES \
+                     AD_HOC_CODE_SIGNING_ALLOWED=YES || \
+          xcodebuild -project ThePetStation.xcodeproj \
+                     -scheme ThePetStation \
+                     -sdk iphonesimulator \
                      -configuration Release \
                      -derivedDataPath build \
                      CODE_SIGN_IDENTITY="" \
@@ -31,7 +40,9 @@ jobs:
       - name: Package .ipa
         run: |
           mkdir -p Payload
-          cp -r build/Build/Products/Release-iphoneos/ThePetStation.app Payload/
+          APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
+          echo "Found app at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
           zip -r ThePetStation.ipa Payload
 
       - name: Upload .ipa Artifact
