@@ -1,4 +1,4 @@
-name: Build iOS App (.ipa)
+name: Build iOS App (.ipa & .zip)
 
 on:
   push:
@@ -15,7 +15,6 @@ jobs:
       - name: Show Available Simulators
         run: |
           xcodebuild -version
-          xcrun simctl list devices
 
       - name: Build iOS App (.app)
         run: |
@@ -30,16 +29,28 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" 2>&1 | tee build_log.txt || { echo "=== XCODEBUILD LOG ERRORS ==="; grep -i "error:" build_log.txt || tail -n 50 build_log.txt; exit 1; }
 
-      - name: Package .ipa
+      - name: Package for Appetize.io (Zip)
+        run: |
+          APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
+          echo "Found App at: $APP_PATH"
+          cd "$(dirname "$APP_PATH")"
+          zip -r "$GITHUB_WORKSPACE/ThePetStation-Appetize.zip" "ThePetStation.app"
+
+      - name: Package .ipa for Physical Devices
         run: |
           mkdir -p Payload
           APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
-          echo "Found App at: $APP_PATH"
           cp -r "$APP_PATH" Payload/
           zip -r ThePetStation.ipa Payload
 
-      - name: Upload .ipa Artifact
+      - name: Upload Appetize.io Zip Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ThePetStation-iOS-App
+          name: ThePetStation-Appetize-Simulator-Zip
+          path: ThePetStation-Appetize.zip
+
+      - name: Upload .ipa Device Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ThePetStation-iOS-Device-IPA
           path: ThePetStation.ipa
