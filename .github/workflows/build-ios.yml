@@ -21,15 +21,11 @@ jobs:
             -project ThePetStation.xcodeproj \
             -scheme ThePetStation \
             -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
             -configuration Release \
             -derivedDataPath build \
-            ARCHS="arm64" \
-            IPHONEOS_DEPLOYMENT_TARGET=15.0 \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            CODE_SIGN_IDENTITY="" 2>&1 | tee build_log.txt || { echo "=== XCODEBUILD LOG ERRORS ==="; grep -i "error:" build_log.txt || tail -n 50 build_log.txt; exit 1; }
 
       - name: Package Physical Device .ipa
         run: |
