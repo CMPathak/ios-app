@@ -29,25 +29,24 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" 2>&1 | tee build_log.txt || { echo "=== XCODEBUILD LOG ERRORS ==="; grep -i "error:" build_log.txt || tail -n 50 build_log.txt; exit 1; }
 
-      - name: Package for Appetize.io (Zip)
+      - name: Locate App
+        id: locate
         run: |
           APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
+          echo "APP_PATH=$APP_PATH" >> $GITHUB_OUTPUT
           echo "Found App at: $APP_PATH"
-          cd "$(dirname "$APP_PATH")"
-          zip -r "$GITHUB_WORKSPACE/ThePetStation-Appetize.zip" "ThePetStation.app"
 
       - name: Package .ipa for Physical Devices
         run: |
           mkdir -p Payload
-          APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
-          cp -r "$APP_PATH" Payload/
+          cp -r "${{ steps.locate.outputs.APP_PATH }}" Payload/
           zip -r ThePetStation.ipa Payload
 
-      - name: Upload Appetize.io Zip Artifact
+      - name: Upload Appetize.io App Folder Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ThePetStation-Appetize-Simulator-Zip
-          path: ThePetStation-Appetize.zip
+          name: ThePetStation.app
+          path: ${{ steps.locate.outputs.APP_PATH }}
 
       - name: Upload .ipa Device Artifact
         uses: actions/upload-artifact@v4
