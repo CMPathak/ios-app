@@ -4,50 +4,57 @@ struct ContentView: View {
     @State private var activeUrl = "https://www.thepetstation.in/"
     @State private var selectedTab = 0
 
-    private let homeUrl = URL(string: "https://www.thepetstation.in/")!
-    private let shopUrl = URL(string: "https://www.thepetstation.in/collections/all")!
-    private let searchUrl = URL(string: "https://www.thepetstation.in/search")!
-    private let cartUrl = URL(string: "https://www.thepetstation.in/cart")!
-    private let accountUrl = URL(string: "https://www.thepetstation.in/account")!
+    private let tabUrls = [
+        "https://www.thepetstation.in/",
+        "https://www.thepetstation.in/collections/all",
+        "https://www.thepetstation.in/search",
+        "https://www.thepetstation.in/cart",
+        "https://www.thepetstation.in/account"
+    ]
+
+    private var currentTabUrl: URL {
+        URL(string: tabUrls[selectedTab]) ?? URL(string: "https://www.thepetstation.in/")!
+    }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Tab 1: Home
-            PetStationWebView(url: homeUrl, currentUrl: $activeUrl)
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(0)
+        VStack(spacing: 0) {
+            PetStationWebView(url: currentTabUrl, currentUrl: $activeUrl)
 
-            // Tab 2: Shop
-            PetStationWebView(url: shopUrl, currentUrl: $activeUrl)
-                .tabItem {
-                    Label("Shop", systemImage: "bag.fill")
-                }
-                .tag(1)
+            Divider()
 
-            // Tab 3: Search
-            PetStationWebView(url: searchUrl, currentUrl: $activeUrl)
-                .tabItem {
-                    Label("Search", systemImage: "magnifyingglass")
-                }
-                .tag(2)
-
-            // Tab 4: Cart
-            PetStationWebView(url: cartUrl, currentUrl: $activeUrl)
-                .tabItem {
-                    Label("Cart", systemImage: "cart.fill")
-                }
-                .tag(3)
-
-            // Tab 5: Account
-            PetStationWebView(url: accountUrl, currentUrl: $activeUrl)
-                .tabItem {
-                    Label("Account", systemImage: "person.fill")
-                }
-                .tag(4)
+            // Lightweight Single-Instance Bottom Navigation
+            HStack {
+                tabButton(title: "Home", icon: "house.fill", tabIndex: 0)
+                Spacer()
+                tabButton(title: "Shop", icon: "bag.fill", tabIndex: 1)
+                Spacer()
+                tabButton(title: "Search", icon: "magnifyingglass", tabIndex: 2)
+                Spacer()
+                tabButton(title: "Cart", icon: "cart.fill", tabIndex: 3)
+                Spacer()
+                tabButton(title: "Account", icon: "person.fill", tabIndex: 4)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+            .background(Color(UIColor.systemBackground))
         }
-        .accentColor(Color(red: 0.88, green: 0.36, blue: 0.15)) // Primary Orange
+        .edgesIgnoringSafeArea(.bottom)
+    }
+
+    @ViewBuilder
+    private func tabButton(title: String, icon: String, tabIndex: Int) -> some View {
+        Button(action: {
+            selectedTab = tabIndex
+        }) {
+            VStack(spacing: 3) {
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                Text(title)
+                    .font(.system(size: 11, weight: selectedTab == tabIndex ? .bold : .regular))
+            }
+            .foregroundColor(selectedTab == tabIndex ? Color(red: 0.88, green: 0.36, blue: 0.15) : .gray)
+        }
     }
 }
 
