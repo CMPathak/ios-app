@@ -15,28 +15,31 @@ jobs:
       - name: Show Xcode Version
         run: xcodebuild -version
 
-      - name: Build Physical iPhone Executable App
+      - name: Compile and Link Full Executable Binary
         run: |
           xcodebuild build \
             -project ThePetStation.xcodeproj \
             -scheme ThePetStation \
-            -sdk iphoneos \
-            -destination 'generic/platform=iOS' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Release \
             -derivedDataPath build \
-            ARCHS="arm64" \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 \
-            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=YES \
-            AD_HOC_CODE_SIGNING_ALLOWED=YES
+            CODE_SIGN_IDENTITY=""
 
-      - name: Package Complete Physical Device .ipa
+      - name: Package Complete Physical Device IPA with Executable
         run: |
           mkdir -p Payload
-          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "ThePetStation.app" | head -n 1)
-          echo "Found Physical Device App at: $APP_PATH"
+          APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
+          echo "Found compiled app at: $APP_PATH"
           cp -r "$APP_PATH" Payload/
+
+          # Configure Info.plist for iPhoneOS physical device target
+          plutil -replace CFBundleSupportedPlatforms -json '["iPhoneOS"]' Payload/ThePetStation.app/Info.plist
+          plutil -replace DTPlatformName -string "iphoneos" Payload/ThePetStation.app/Info.plist
 
           echo "=== PAYLOAD CONTENTS VERIFICATION ==="
           ls -la Payload/ThePetStation.app/
