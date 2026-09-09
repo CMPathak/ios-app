@@ -1,4 +1,4 @@
-name: Build Universal iOS App (.ipa & .zip)
+name: Build Physical iPhone Device IPA
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-ios:
+  build-device-ipa:
     runs-on: macos-14
     steps:
       - name: Checkout repository
@@ -15,43 +15,32 @@ jobs:
       - name: Show Xcode Version
         run: xcodebuild -version
 
-      - name: Build Universal iOS App (.app)
+      - name: Build Physical iPhone App (.app for iphoneos)
         run: |
           xcodebuild build \
             -project ThePetStation.xcodeproj \
             -scheme ThePetStation \
-            -destination 'generic/platform=iOS Simulator' \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
             -derivedDataPath build \
-            ARCHS="x86_64 arm64" \
-            ONLY_ACTIVE_ARCH=NO \
+            ARCHS="arm64" \
             IPHONEOS_DEPLOYMENT_TARGET=15.0 \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM="" 2>&1 | tee build_log.txt || { echo "=== XCODEBUILD LOG ERRORS ==="; grep -i "error:" build_log.txt || tail -n 50 build_log.txt; exit 1; }
+            DEVELOPMENT_TEAM=""
 
-      - name: Locate App
-        id: locate
-        run: |
-          APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
-          echo "APP_PATH=$APP_PATH" >> $GITHUB_OUTPUT
-          echo "Found App at: $APP_PATH"
-
-      - name: Package .ipa for Physical Devices
+      - name: Package Physical Device .ipa
         run: |
           mkdir -p Payload
-          cp -r "${{ steps.locate.outputs.APP_PATH }}" Payload/
-          zip -r ThePetStation.ipa Payload
+          APP_PATH=$(find build/Build/Products/Release-iphoneos -name "ThePetStation.app" | head -n 1)
+          echo "Found Physical Device App at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
+          zip -r ThePetStation-Device.ipa Payload
 
-      - name: Upload Appetize.io App Folder Artifact
+      - name: Upload Physical Device .ipa Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ThePetStation.app
-          path: ${{ steps.locate.outputs.APP_PATH }}
-
-      - name: Upload .ipa Device Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ThePetStation-iOS-Device-IPA
-          path: ThePetStation.ipa
+          name: ThePetStation-Physical-iPhone-IPA
+          path: ThePetStation-Device.ipa
