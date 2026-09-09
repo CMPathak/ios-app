@@ -17,14 +17,15 @@ jobs:
 
       - name: Build iOS App (.app)
         run: |
-          xcodebuild -project ThePetStation.xcodeproj \
-                     -scheme ThePetStation \
-                     -sdk iphonesimulator \
-                     -configuration Release \
-                     -derivedDataPath build \
-                     CODE_SIGN_IDENTITY="" \
-                     CODE_SIGNING_REQUIRED=NO \
-                     CODE_SIGNING_ALLOWED=NO
+          xcodebuild build \
+            -project ThePetStation.xcodeproj \
+            -scheme ThePetStation \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
 
       - name: Package .ipa
         run: |
