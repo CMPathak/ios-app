@@ -163,6 +163,7 @@
 		A10000012A00000000000019 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -170,6 +171,7 @@
 		A10000012A00000000000020 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				SDKROOT = iphoneos;
 			};
 			name = Release;
