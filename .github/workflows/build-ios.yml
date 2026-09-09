@@ -21,7 +21,7 @@ jobs:
         run: |
           xcodebuild -project ThePetStation.xcodeproj \
                      -scheme ThePetStation \
-                     -sdk iphoneos \
+                     -destination 'generic/platform=iOS' \
                      -configuration Release \
                      -derivedDataPath build \
                      CODE_SIGN_IDENTITY="" \
