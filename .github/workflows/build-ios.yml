@@ -28,7 +28,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            DEVELOPMENT_TEAM=""
+            DEVELOPMENT_TEAM="" 2>&1 | tee build_log.txt || { echo "=== XCODEBUILD LOG ERRORS ==="; grep -i "error:" build_log.txt || tail -n 50 build_log.txt; exit 1; }
 
       - name: Package .ipa
         run: |
