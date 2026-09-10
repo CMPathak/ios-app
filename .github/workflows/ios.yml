@@ -1,21 +1,12 @@
-name: Build and Deploy OTA IPA to GitHub Pages
+name: Build Unsigned Physical Device IPA for Sideloadly
 
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
-  build-and-deploy:
+  build-unsigned-ipa:
     runs-on: macos-14
     steps:
       - name: Checkout Repository
@@ -24,157 +15,46 @@ jobs:
       - name: Select Xcode Version
         run: sudo xcode-select -s /Applications/Xcode_15.2.app
 
-      - name: Diagnostic Environment Info
+      - name: Show Xcode & SDK Info
         run: |
-          echo "=== Xcode Version ==="
           xcodebuild -version
-          echo "=== Available SDKs ==="
           xcodebuild -showsdks
 
-      - name: Install Apple Certificate and Provisioning Profile
-        env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
-          P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      - name: Build Unsigned Physical iPhone Binary (-sdk iphoneos)
         run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_profile.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo "$BUILD_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
-          echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$PP_PATH"
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Handle certificate import robustly (supports both password-protected and empty-password .p12 files)
-          if [ -z "${P12_PASSWORD}" ]; then
-            echo "Importing .p12 certificate without password..."
-            security import "$CERTIFICATE_PATH" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          else
-            echo "Importing .p12 certificate with provided password..."
-            security import "$CERTIFICATE_PATH" -P "${P12_PASSWORD}" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
-          fi
-
-          security list-keychain -d user -s "$KEYCHAIN_PATH"
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
-
-      - name: Archive App for Physical iPhone
-        run: |
-          xcodebuild clean archive \
+          xcodebuild build \
             -project ThePetStation.xcodeproj \
             -scheme ThePetStation \
-            -destination 'generic/platform=iOS' \
+            -sdk iphoneos \
             -configuration Release \
-            -archivePath build/ThePetStation.xcarchive \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}"
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" 2>&1 | tee build_log.txt || { echo "=== BUILD FAILED ==="; tail -n 50 build_log.txt; exit 1; }
 
-      - name: Verify Archive and Executable Existence
+      - name: Package Physical Device IPA
         run: |
-          APP_PATH="build/ThePetStation.xcarchive/Products/Applications/ThePetStation.app"
-          EXECUTABLE_PATH="$APP_PATH/ThePetStation"
+          mkdir -p Payload
+          APP_PATH=$(find build/Build/Products -name "ThePetStation.app" | head -n 1)
+          echo "Found app at: $APP_PATH"
+          cp -r "$APP_PATH" Payload/
 
-          if [ ! -d "$APP_PATH" ] || [ ! -f "$EXECUTABLE_PATH" ]; then
-              echo "ERROR: ThePetStation executable is missing in archive"
-              exit 1
-          fi
-          echo "SUCCESS: Executable verified at $EXECUTABLE_PATH"
+          # Update Info.plist for iPhoneOS physical device
+          plutil -replace CFBundleSupportedPlatforms -json '["iPhoneOS"]' Payload/ThePetStation.app/Info.plist
+          plutil -replace DTPlatformName -string "iphoneos" Payload/ThePetStation.app/Info.plist
 
-      - name: Export IPA from Archive
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath build/ThePetStation.xcarchive \
-            -exportPath output \
-            -exportOptionsPlist ExportOptions.plist
+          echo "=== PAYLOAD CONTENTS ==="
+          ls -la Payload/ThePetStation.app/
 
-      - name: Prepare GitHub Pages OTA Files
-        env:
-          OWNER: ${{ github.repository_owner }}
-          REPO: ${{ github.event.repository.name }}
-        run: |
-          mkdir -p pages_output
-          IPA_FILE=$(find output -name "*.ipa" | head -n 1)
-          cp "$IPA_FILE" pages_output/ThePetStation.ipa
+          echo "=== VERIFYING EXECUTABLE ARCHITECTURE ==="
+          file Payload/ThePetStation.app/ThePetStation
+          lipo -info Payload/ThePetStation.app/ThePetStation
 
-          # Generate manifest.plist for OTA installation
-          cat <<EOF > pages_output/manifest.plist
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>items</key>
-              <array>
-                  <dict>
-                      <key>assets</key>
-                      <array>
-                          <dict>
-                              <key>kind</key>
-                              <string>software-package</string>
-                              <key>url</key>
-                              <string>https://$OWNER.github.io/$REPO/ThePetStation.ipa</string>
-                          </dict>
-                      </array>
-                      <key>metadata</key>
-                      <dict>
-                          <key>bundle-identifier</key>
-                          <string>com.thepetstation.app</string>
-                          <key>bundle-version</key>
-                          <string>1.0.0</string>
-                          <key>kind</key>
-                          <string>software</string>
-                          <key>title</key>
-                          <string>The Pet Station</string>
-                      </dict>
-                  </dict>
-              </array>
-          </dict>
-          </plist>
-          EOF
+          zip -r ThePetStation-Sideloadly.ipa Payload
 
-          # Generate index.html with direct install button
-          cat <<EOF > pages_output/index.html
-          <!DOCTYPE html>
-          <html>
-          <head>
-              <title>Install The Pet Station</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; padding: 40px 20px; background: #fcfcfc; color: #333; }
-                  .container { max-width: 500px; margin: 40px auto; background: white; padding: 40px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-                  .btn { background: #e05a2b; color: white; padding: 16px 32px; font-size: 18px; border-radius: 12px; text-decoration: none; display: inline-block; font-weight: bold; margin-top: 20px; box-shadow: 0 4px 12px rgba(224, 90, 43, 0.3); }
-                  .btn:active { transform: scale(0.98); }
-                  h1 { color: #111; margin-bottom: 10px; }
-                  p { color: #666; line-height: 1.5; }
-              </style>
-          </head>
-          <body>
-              <div class="container">
-                  <h1>🐾 The Pet Station</h1>
-                  <p>Tap the button below to install the iOS app directly on your physical iPhone.</p>
-                  <a class="btn" href="itms-services://?action=download-manifest&url=https://$OWNER.github.io/$REPO/manifest.plist">Install The Pet Station</a>
-              </div>
-          </body>
-          </html>
-          EOF
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload Artifact for Pages
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload Unsigned IPA Artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: pages_output
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-    
-      - name: Output Installation URL
-        run: |
-          echo "=== OTA INSTALLATION PAGE URL ==="
-          echo "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          name: ThePetStation-Sideloadly-IPA
+          path: ThePetStation-Sideloadly.ipa
