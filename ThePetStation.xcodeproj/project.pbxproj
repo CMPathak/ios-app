@@ -10,6 +10,7 @@
 		A10000012A00000000000001 /* ThePetStationApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012A00000000000002 /* ThePetStationApp.swift */; };
 		A10000012A00000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012A00000000000004 /* ContentView.swift */; };
 		A10000012A00000000000005 /* PetStationWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000012A00000000000006 /* PetStationWebView.swift */; };
+		A10000012A0000000000000B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000012A0000000000000A /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -18,6 +19,7 @@
 		A10000012A00000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A10000012A00000000000006 /* PetStationWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetStationWebView.swift; sourceTree = "<group>"; };
 		A10000012A00000000000007 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000012A0000000000000A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -29,6 +31,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000012A0000000000000C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000012A0000000000000B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXGroup section */
 		A10000012A00000000000009 = {
@@ -46,6 +59,7 @@
 				A10000012A00000000000004 /* ContentView.swift */,
 				A10000012A00000000000006 /* PetStationWebView.swift */,
 				A10000012A00000000000007 /* Info.plist */,
+				A10000012A0000000000000A /* Assets.xcassets */,
 			);
 			path = ThePetStation;
 			sourceTree = "<group>";
@@ -67,6 +81,7 @@
 			buildPhases = (
 				A10000012A00000000000014 /* Sources */,
 				A10000012A00000000000008 /* Frameworks */,
+				A10000012A0000000000000C /* Resources */,
 			);
 			buildRules = (
 			);
@@ -129,6 +144,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "arm64";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -149,6 +165,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "arm64";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
